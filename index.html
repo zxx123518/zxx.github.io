@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>晋安小商店购物车 - 带重置功能</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: #333;
+            min-height: 100vh;
+            padding: 20px;
+            padding-bottom: 100px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: linear-gradient(90deg, #3498db, #1a5276);
+            color: white;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(52, 152, 219, 0.3);
+        }
+        
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+        }
+        
+        .budget-container {
+            position: relative;
+            z-index: 1100; /* 高于浮动球 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+        
+        .budget-container label {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+        
+        #budget {
+            padding: 12px 20px;
+            font-size: 1.2rem;
+            border: none;
+            border-radius: 30px;
+            width: 180px;
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        }
+        
+        .action-btn {
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 1.1rem;
+            border-radius: 30px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 5px;
+            min-width: 140px;
+        }
+        
+        #set-budget {
+            background: #ff6b6b;
+            box-shadow: 0 4px 10px rgba(255, 107, 107, 0.4);
+        }
+        
+        #set-budget:hover {
+            background: #ff5252;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(255, 107, 107, 0.6);
+        }
+        
+        #reset-btn {
+            background: #9b59b6;
+            box-shadow: 0 4px 10px rgba(155, 89, 182, 0.4);
+        }
+        
+        #reset-btn:hover {
+            background: #8e44ad;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 15px rgba(155, 89, 182, 0.6);
+        }
+        
+        .products-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .product-info {
+            padding: 20px;
+            flex-grow: 1;
+        }
+        
+        .product-name {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+            min-height: 50px;
+        }
+        
+        .special-item {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+        
+        .product-price {
+            font-size: 1.4rem;
+            color: #e74c3c;
+            font-weight: 700;
+            margin: 10px 0;
+        }
+        
+        .quantity-control {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-top: 15px;
+            gap: 10px;
+        }
+        
+        .qty-btn {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            border: none;
+            background: #3498db;
+            color: white;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+        
+        .qty-btn:hover {
+            background: #2980b9;
+            transform: scale(1.1);
+        }
+        
+        .qty-input {
+            width: 50px;
+            text-align: center;
+            font-size: 1.1rem;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            padding: 8px;
+        }
+        
+        .floating-ball {
+            position: fixed;
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+            cursor: pointer;
+            z-index: 2000;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+            transition: all 0.3s ease;
+        }
+        
+        .floating-ball:hover {
+            transform: scale(1.1);
+            box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3);
+        }
+        
+        #balance-ball {
+            top: 30px;
+            left: 30px;
+            background: linear-gradient(135deg, #3498db, #1a5276);
+            color: white;
+        }
+        
+        #copy-ball {
+            top: 30px;
+            right: 30px;
+            background: linear-gradient(135deg, #2ecc71, #27ae60);
+            color: white;
+        }
+        
+        .negative {
+            color: #ff6b6b !important;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4) !important;
+        }
+        
+        .cart-container {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.15);
+            width: 90%;
+            max-width: 700px;
+            z-index: 2100;
+            display: none;
+        }
+        
+        .cart-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #eee;
+        }
+        
+        .cart-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #3498db;
+        }
+        
+        .close-cart {
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .cart-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .cart-item-name {
+            flex: 2;
+            font-weight: 500;
+        }
+        
+        .cart-item-qty {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cart-qty-input {
+            width: 60px;
+            padding: 8px;
+            border: 2px solid #3498db;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 120px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #2ecc71;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-weight: 600;
+            box-shadow: 0 5px 20px rgba(46, 204, 113, 0.5);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            z-index: 1100;
+        }
+        
+        .show {
+            opacity: 1;
+        }
+        
+        .history-title {
+            font-size: 1.8rem;
+            margin: 25px 0 15px;
+            color: #2c3e50;
+            text-align: center;
+        }
+        
+        .history-container {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 30px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        .history-item {
+            padding: 12px 15px;
+            border-bottom: 1px dashed #eee;
+            font-size: 1.1rem;
+        }
+        
+        .separator {
+            text-align: center;
+            font-weight: bold;
+            font-size: 1.3rem;
+            margin: 25px 0;
+            color: #e74c3c;
+            padding: 10px;
+            background: #fff9f9;
+            border-radius: 8px;
+            border-left: 4px solid #e74c3c;
+        }
+        
+        .reset-info {
+            text-align: center;
+            margin-top: 20px;
+            padding: 15px;
+            border-top: 2px dashed #ddd;
+            font-size: 0.9rem;
+            color: #7f8c8d;
+        }
+		
+		
+
+		.cart-qty-btn {
+			width: 28px;
+			height: 28px;
+			border-radius: 50%;
+			border: none;
+			background: #3498db;
+			color: white;
+			font-size: 1rem;
+			cursor: pointer;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: all 0.2s ease;
+		}
+
+		.cart-qty-btn:hover {
+			background: #2980b9;
+			transform: scale(1.1);
+		}
+		    /* 添加购物车单价样式 */
+		.cart-item-price {
+			flex: 1;
+			text-align: center;
+			color: #e74c3c;
+			font-weight: bold;
+		}
+
+		.cart-item-total {
+			flex: 1;
+			text-align: right;
+			color: #e74c3c;
+			font-weight: bold;
+			padding-right: 10px;
+		}
+		   /* 添加购物车按钮样式 */
+		.cart-btn {
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			border: none;
+			background: #3498db;
+			color: white;
+			cursor: pointer;
+			font-size: 1rem;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+		}
+		.cart-btn:hover {
+			background: #2980b9;
+		}
+		.cart-item-qty {
+			display: flex;
+			gap: 8px;
+			align-items: center;
+		}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-shopping-cart"></i> 晋安小商店购物车</h1>
+            <div class="budget-container">
+                <label for="budget">您的预算 (¥):</label>
+                <input type="number" id="budget" min="0" placeholder="输入预算金额">
+                <button id="set-budget" class="action-btn">设置预算</button>
+                <button id="reset-btn" class="action-btn">重置购物车</button>
+            </div>
+        </header>
+        
+        <div id="history-section" style="display:none;">
+            <h2 class="history-title"><i class="fas fa-history"></i> 上一次购物清单</h2>
+            <div class="history-container" id="history-container">
+                <!-- 历史记录将在这里显示 -->
+            </div>
+        </div>
+        
+        <div class="products-grid" id="products-container">
+            <!-- 商品将通过JS动态添加 -->
+        </div>
+        
+        <div class="floating-ball" id="balance-ball">
+            <span id="balance">¥0.0</span>
+        </div>
+        
+        <div class="floating-ball" id="copy-ball" title="复制购物清单">
+            <i class="fas fa-copy"></i>
+        </div>
+        
+        <div class="cart-container" id="cart-container">
+            <div class="cart-header">
+                <div class="cart-title"><i class="fas fa-shopping-cart"></i> 购物车</div>
+                <button class="close-cart"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="cart-items" id="cart-items">
+                <!-- 购物车项目将在这里显示 -->
+            </div>
+        </div>
+        
+        <div class="notification" id="notification">已复制到剪贴板!</div>
+        
+        <div class="reset-info">
+            <p><i class="fas fa-info-circle"></i> 提示：点击"重置购物车"按钮可以清除所有购物数据，恢复到初始状态</p>
+        </div>
+    </div>
+
+    <script>
+        // 商品数据
+        const products = [
+            { name: "秋叶小町（大米）5kg/包", price: 48 },
+            { name: "五常五香米5kg/包", price: 66 },
+            { name: "泰国（茉莉香米真空包装）2.5kg/包", price: 48 },
+            { name: "聚春园西式牛排（箱）", price: 273 },
+            { name: "枣夹核桃500g/包", price: 46 },
+            { name: "纸皮核桃500g/包", price: 35 },
+            { name: "罗源湾猪肉条120g/罐", price: 18 },
+            { name: "罗源湾肉松250g/包", price: 35 },
+            { name: "五香泉五常珍品香米（真空包装）5kg/包", price: 88 },
+            { name: "太太乐鸡精180g/包", price: 9.8 },
+            { name: "无碘福建原盐250g/包", price: 2.6 },
+            { name: "圣迪乐村鸡蛋1.3kg/30枚", price: 62 },
+            { name: "澳牛品尊牛奶250ml*12盒/箱", price: 59.8 },
+            { name: "澳牛纯牛奶250ml*12盒/箱", price: 68.8 },
+            { name: "德国进口Knoppers牛奶榛子巧克力威化饼干10包/250g", price: 43.8 },
+            { name: "皇冠丹麦曲奇礼盒装681g盒（随机赠品）", price: 98 },
+            { name: "恰恰每日坚果30包/箱", price: 168 },
+            { name: "红糖芝麻味小麻花500g/包", price: 22 },
+            { name: "乌江涪陵榨菜（清淡）70g/包", price: 2.8 },
+            { name: "斜桥榨菜（味道偏重）90g/包", price: 2 },
+            { name: "西麦即食燕麦片1.48kg/袋", price: 33 },
+            { name: "臻夫子猪肉铺250g（16小包）/袋", price: 38 },
+            { name: "百氏兄弟越南芒果干90g/袋", price: 12 },
+            { name: "金山珍山楂干100g/罐", price: 21.5 },
+            { name: "金山珍香菇250g/袋", price: 67.5 },
+            { name: "金山珍黑木耳250g/袋", price: 57.5 },
+            { name: "金山珍茶树菇200g/袋", price: 60.5 },
+            { name: "金山珍虫草花160g/袋", price: 51.5 },
+            { name: "金山珍干贝250g/袋", price: 108 },
+            { name: "金山珍东山墨鱼250g/袋", price: 128 },
+            { name: "金山珍紫菜100g/袋", price: 31.5 },
+            { name: "金山珍蛏干（熟）150g/袋", price: 149 },
+            { name: "金山珍虾皮120g/袋", price: 44.5 },
+            { name: "金山珍桂圆肉350g/罐", price: 67.5 },
+            { name: "金山珍莲子300g/袋", price: 81.50 },
+            { name: "金山珍枸杞160g/罐", price: 31.5 },
+            { name: "金山珍海带结75g/袋", price: 18.5 },
+            { name: "金山珍黄花菜130g/包", price: 27.5 },
+            { name: "金山珍黑芝麻200g/包", price: 19.8 },
+            { name: "汀江山茶油500ml/瓶", price: 128 },
+            { name: "农大神锋天然蜂蜜1000ml/瓶", price: 86 },
+            { name: "花园牛奶20袋/箱", price: 59 },
+            { name: "金山珍淡菜干250g/袋", price: 49.8 },
+            { name: "金山珍贡菊30g/罐", price: 24 },
+            { name: "开心果105g/袋", price: 16.5 },
+            { name: "腰果118g/袋", price: 16.5 },
+            { name: "老杨咸蛋黄饼干100g/盒", price: 18 },
+            { name: "枣夹核桃派（独立包装）250g/袋", price: 24.8 },
+            { name: "鲁花5S花生油5L", price: 159 },
+            { name: "聚春园福州线面2.5kg/箱", price: 88 },
+            { name: "南昌拌粉201g/盒", price: 8 },
+            { name: "营多捞面85g*5包", price: 15.9 },
+            { name: "六物山楂条680g/盒", price: 68 },
+            { name: "金山珍本草银耳羹258g*6/盒", price: 88 },
+            { name: "金山珍黑米350g/袋", price: 16.80 },
+            { name: "闽洋盐渍海蜇皮（礼桶）*1", price: 278 },
+            { name: "鱼皮花生500g", price: 25.8 },
+            { name: "原谷YOU选黄小米1000g", price: 25.9 },
+            { name: "原谷YOU选五色糙米1000g", price: 23.8 },
+            { name: "金山珍金线菇250g/袋", price: 67.5 },
+            { name: "金山珍虾仁200g/袋", price: 129 },
+            { name: "即食烧仙草东冻1750g", price: 69 },
+            { name: "白象招牌猪骨汤面110g/桶", price: 6 },
+            { name: "阿卜卤香虎皮风爪120g", price: 20.7 },
+            { name: "MABA日式小圆饼（海盐味）160g", price:20.7 },
+            { name: "椰谷椰子水245g*10", price: 69.9 },
+            { name: "浣春风刀削面900g", price: 39.8 },
+            { name: "鲁花自然鲜酱油1L/瓶", price: 22.9 },
+            { name: "伊利纯牛奶250ml*24/箱", price: 68 },
+            { name: "手撕牛肉干70g", price: 28 },
+            { name: "农蒸地瓜干180g", price: 18 },
+            { name: "亿家馨原味泡鸡爪30g*20", price: 75.9 },
+            { name: "6粒装咸鸭蛋", price: 21 },
+            { name: "味食善牛排1390g", price: 398 },
+            { name: "雪碧500ml/瓶", price: 3.5 },
+            { name: "可乐500ml/瓶", price: 3.5 },
+            { name: "福临门优质白糖（炭化糖）405g", price: 8.9 },
+            { name: "伊利安慕希酸奶黄桃燕麦200g*10/箱", price: 68 },
+            { name: "乐事薯片（青柠味）104g/罐", price: 9.5 },
+            { name: "湖头米粉4.5斤", price: 35 },
+            { name: "海带情结680g/包（零食）", price: 26 },
+            { name: "手工番薯糖500g/包", price: 27 },
+            { name: "纯手工燕麦糖500g/箱", price: 26 },
+            { name: "南方黑芝麻糊600g/袋", price: 32 },
+            { name: "雀巢三合一速溶咖啡15g*100条", price: 156 },
+            { name: "阳阩堂六和谷-山药莲子米糊25g*12支", price: 108 },
+            { name: "阳阩堂八真元-人参枸杞米糊25g*12支", price: 108 },
+            { name: "阳阩堂猴菇米昔乐28g*15支", price: 95 },
+            { name: "康师傅红烧牛肉面12桶/箱（无库存）", price: 0 },
+            { name: "坦诚鱼露850ml/瓶", price: 28 },
+            { name: "金山珍银耳露230g*6瓶", price: 68 },
+            { name: "海蜇丝206g", price: 18 },
+            { name: "海蜇头180g", price: 23 },
+            { name: "黑芝麻糕（甜咸味）500g/袋", price: 33 },
+            { name: "淮山抹茶核桃糕500g", price: 28 },
+            { name: "坚果茯苓八珍糕500g", price: 28 },
+            { name: "阳栗油栗仁158g", price: 15 },
+            { name: "金晔原味山楂棒348g", price: 36 },
+            { name: "维多芝水牛纯奶蛋糕（原味）338g", price: 24 },
+            { name: "泉利堂冰糖杨梅200g", price: 22.8 },
+            { name: "蒙辉草原鲜乳大饼（原味）308g/袋", price: 16 },
+            { name: "米檬生打椰椰曲奇350g", price: 28.8 },
+            { name: "米檬可可牛乳曲奇350g", price: 28.8 },
+            { name: "福三坊木糖醇坚果酥200g/罐", price: 16.8 },
+            { name: "福三坊丁香橄榄500g/袋", price: 19.8 },
+            { name: "福三坊厦门馅饼（板栗味）240g/盒", price: 19.8 },
+            { name: "来福见长汀豆腐干320g/袋", price: 39.8 },
+            { name: "李子柒柳州螺蛳粉335g/袋", price: 16.9 },
+            { name: "麻六记酸辣粉256g/盒", price: 15.9 },
+            { name: "嫩纸片笋300g/袋（零食）", price: 15 },
+            { name: "传统农家米5kg/袋", price: 88 },
+            { name: "武夷山金桔糕99g/盒", price: 13.8 },
+            { name: "武夷山酸枣糕99g/盒", price: 13.8 },
+            { name: "米ni酥160g", price: 9 },
+            { name: "厨匠牛肉粒200g/罐", price: 18 },
+            { name: "花园有机牧场纯牛奶210g*12盒", price:58 },
+            { name: "吃欢天卤蛋板面（卤香牛肉味）191g/桶", price:7 },
+            { name: "吃欢天卤蛋板面（香辣牛肉味）191g/桶", price:7 },
+            { name: "吃欢天砂锅土豆粉（香辣牛肉味）244g/桶", price:7},
+            { name: "初养480ml大果粒饮（猕猴桃味）扁瓶装", price: 6},
+            { name: "初养480ml大果粒饮（水蜜桃味）扁瓶装", price:6 },
+            { name: "龙垂涎100原味鸡/鸭腿（零食）", price:6 },
+            { name: "旺利来118g流心蛋酥（咸蛋黄味）", price:6 },
+            { name: "克莉娜葵花籽油500ML*2礼盒", price: 89},
+            { name: "克莉娜特级初榨橄榄油500ML*1礼盒", price:139 },
+            { name: "克莉娜亚麻籽油250ML*2礼盒", price:125 },
+            { name: "迎福高纯山茶油1.25L/瓶", price:318 },
+            { name: "鲁花生鲜耗油528g/瓶", price:16.9 },
+            { name: "鲁花零添加活性考拉椭圆面条600g", price: 17.9},
+            { name: "麦臻选去皮去核枣600g", price:58 },
+            { name: "麦臻选蒟蒻果汁果冻1.08kg/袋", price:53.8 },
+            { name: "亚玛亚酱香鸡蛋干600g/袋", price: 45.8},
+            { name: "麦臻选A2β酪蛋白高钙奶棒150g", price: 48.8},
+            { name: "麦臻选黄油华夫饼750g", price: 48.8},
+            { name: "麦臻选水果奶芙沙琪玛800g", price: 48.8},
+            { name: "麦臻选薄脆饼干组合800g", price: 48.8},
+            { name: "麦臻选黄油鸡蛋卷418g", price: 72.8},
+            { name: "优尚优品黑松露火腿苏打饼干1200g", price: 48.8},
+            { name: "口口香深卤鸭翅根酱香味580g", price:56.8 },
+            { name: "麦臻选原味腰果907g", price:118 },
+            { name: "麦臻选原味海苔5g*30", price: 68.8},
+            { name: "宜客夏威夷果960g", price: 71.8},
+            { name: "麦臻选芥末味夏威夷果仁300g", price: 72.8},
+            { name: "麦臻选厚切烧烤肉片300g", price: 142},
+            { name: "麦臻选酱卤鹌鹑蛋500g（草本酱卤味）", price: 42.8},
+            { name: "麦臻选无核西梅干400g", price: 68},
+            { name: "宜客澳洲燕麦片2kg/罐", price:38 },
+            { name: "弘威低脂黑荞麦面840g/盒", price:33 },
+            { name: "弘威低脂莲子淮山面840g/盒", price:28.8 },
+            { name: "饭礼记延吉风味荞麦速冷面490g*3", price:28.8 },
+            { name: "麦臻选南瓜山药小米粥1kg/罐", price:38.8 },
+            { name: "麦臻选五黑谷物杂粮粥800g/罐", price:36 },
+            { name: "麦臻选裙带菜200g/袋", price: 35.8},
+            { name: "宜客缤纷坚果果干1kg/罐", price:68 },
+			{ name:"-----凑单专用-----",price:0},
+			{ name: "无碘福建原盐250g/包", price: 2.6},
+			{ name: "乌江涪陵榨菜（清淡）70g/包", price: 2.8},
+			{ name: "斜桥榨菜（味道偏重）90g/包", price: 2},
+			{ name: "南昌拌粉201g/盒", price: 8},
+			{ name: "白象招牌猪骨汤面110g/桶", price: 6},
+			{ name: "雪碧500ml/瓶", price: 3.5},
+			{ name: "可乐500ml/瓶", price: 3.5},
+			{ name: "吃欢天卤蛋板面（卤香牛肉味）191g/桶", price:7 },
+			{ name: "吃欢天卤蛋板面（香辣牛肉味）191g/桶", price:7 },
+			{ name: "吃欢天砂锅土豆粉（香辣牛肉味）244g/桶", price:7},
+			{ name: "初养480ml大果粒饮（猕猴桃味）扁瓶装", price: 6},
+			{ name: "初养480ml大果粒饮（水蜜桃味）扁瓶装", price:6 },
+			{ name: "龙垂涎100原味鸡/鸭腿（零食）", price:6 },
+			{ name: "旺利来118g流心蛋酥（咸蛋黄味）", price:6 }
+        ];
+        
+        // 特殊商品标记（索引位置）改为动态计算
+        let specialIndex;
+        
+        // 初始化变量
+        let budget = 0;
+        let cart = {};
+        let history = [];
+        
+        // DOM元素
+        const budgetInput = document.getElementById('budget');
+        const setBudgetBtn = document.getElementById('set-budget');
+        const resetBtn = document.getElementById('reset-btn');
+        const productsContainer = document.getElementById('products-container');
+        const balanceBall = document.getElementById('balance-ball');
+        const balanceElement = document.getElementById('balance');
+        const copyBall = document.getElementById('copy-ball');
+        const cartContainer = document.getElementById('cart-container');
+        const cartItems = document.getElementById('cart-items');
+        const closeCartBtn = document.querySelector('.close-cart');
+        const notification = document.getElementById('notification');
+        const historySection = document.getElementById('history-section');
+        const historyContainer = document.getElementById('history-container');
+        
+        // 初始化页面
+        function initPage() {
+            // 动态计算特殊商品索引
+            specialIndex = products.findIndex(p => p.name.includes("-----凑单专用-----"));
+            
+            // 尝试从localStorage加载数据
+            const savedBudget = localStorage.getItem('shoppingCart_budget');
+            const savedCart = localStorage.getItem('shoppingCart_cart');
+            const savedHistory = localStorage.getItem('shoppingCart_history');
+            
+            if (savedBudget) {
+                budget = parseFloat(savedBudget);
+                budgetInput.value = budget;
+            }
+            
+            if (savedCart) {
+                cart = JSON.parse(savedCart);
+            } else {
+                // 初始化购物车
+                products.forEach((product, index) => {
+                    cart[index] = 0;
+                });
+            }
+            
+            if (savedHistory) {
+                history = JSON.parse(savedHistory);
+                if (history.length > 0) {
+                    displayHistory();
+                    historySection.style.display = 'block';
+                }
+            }
+            
+            renderProducts();
+            updateBalance();
+            
+            // 添加事件委托处理加减按钮
+            setupEventDelegation();
+			
+			 // 添加购物车按钮事件委托
+			cartItems.addEventListener('click', cartButtonHandler);
+        }
+        
+		// 新增购物车按钮处理函数
+		function cartButtonHandler(e) {
+			if (e.target.classList.contains('cart-minus-btn')) {
+				const id = e.target.dataset.id;
+				if (cart[id] > 0) {
+					cart[id]--;
+					updateCart();
+					renderProducts();
+				}
+			} else if (e.target.classList.contains('cart-plus-btn')) {
+				const id = e.target.dataset.id;
+				cart[id]++;
+				updateCart();
+				renderProducts();
+			}
+		}
+
+		
+        // 设置事件委托处理加减按钮
+        function setupEventDelegation() {
+            productsContainer.addEventListener('click', function(e) {
+                if (e.target.classList.contains('minus')) {
+                    decrementQuantity(e);
+                } else if (e.target.classList.contains('plus')) {
+                    incrementQuantity(e);
+                }
+            });
+            
+            // 处理输入框变化
+            productsContainer.addEventListener('change', function(e) {
+                if (e.target.classList.contains('qty-input')) {
+                    updateQuantity(e);
+                }
+            });
+        }
+        
+        // 渲染商品列表
+        function renderProducts() {
+            productsContainer.innerHTML = '';
+            
+            products.forEach((product, index) => {
+                const isSpecial = index > specialIndex;
+                
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                
+                productCard.innerHTML = `
+                    <div class="product-info">
+                        <div class="product-name ${isSpecial ? 'special-item' : ''}">${product.name}</div>
+                        <div class="product-price ${isSpecial ? 'special-item' : ''}">¥${product.price}</div>
+                        <div class="quantity-control">
+                            <button class="qty-btn minus" data-id="${index}">-</button>
+                            <input type="number" class="qty-input" data-id="${index}" 
+                                   value="${cart[index] || 0}" min="0">
+                            <button class="qty-btn plus" data-id="${index}">+</button>
+                        </div>
+                    </div>
+                `;
+                
+                productsContainer.appendChild(productCard);
+            });
+        }
+        
+        // 更新购物车
+		function updateCart() {
+			localStorage.setItem('shoppingCart_cart', JSON.stringify(cart));
+			renderCartItems(); // 重新渲染购物车
+			updateBalance();   // 更新余额显示
+			renderProducts();  // 重新渲染商品列表，保持数量一致
+		}
+        
+        // 更新余额
+        function updateBalance() {
+            const total = calculateTotal();
+            const balanceValue = budget - total;
+            
+            balanceElement.textContent = `¥${balanceValue.toFixed(1)}`;
+            
+            if (balanceValue < 0) {
+                balanceBall.classList.add('negative');
+            } else {
+                balanceBall.classList.remove('negative');
+            }
+        }
+        
+        // 计算总金额
+        function calculateTotal() {
+            return Object.keys(cart).reduce((total, key) => {
+                return total + (products[key].price * cart[key]);
+            }, 0);
+        }
+        
+        // 减少数量
+        function decrementQuantity(e) {
+            const id = e.target.dataset.id;
+            if (cart[id] > 0) {
+                cart[id]--;
+                updateCart();
+            }
+        }
+        
+        // 增加数量
+        function incrementQuantity(e) {
+            const id = e.target.dataset.id;
+            cart[id] = (cart[id] || 0) + 1;
+            updateCart();
+        }
+        
+        // 更新数量
+        function updateQuantity(e) {
+            const id = e.target.dataset.id;
+            let value = parseInt(e.target.value);
+            if (isNaN(value) || value < 0) value = 0;
+            cart[id] = value;
+            updateCart();
+        }
+        
+        // 渲染购物车项目
+		// 修改渲染购物车项目的函数
+		function renderCartItems() {
+			cartItems.innerHTML = '';
+
+			// 添加表头
+			const header = document.createElement('div');
+			header.className = 'cart-item';
+			header.innerHTML = `
+				<div class="cart-item-name" style="font-weight:bold; flex:2">商品</div>
+				<div class="cart-item-price" style="font-weight:bold">单价</div>
+				<div class="cart-item-qty" style="font-weight:bold">数量</div>
+			`;
+			cartItems.appendChild(header);
+
+			Object.keys(cart).forEach(key => {
+				if (cart[key] > 0) {
+					const item = document.createElement('div');
+					item.className = 'cart-item';
+
+					// 这里添加了单价列和数量增减按钮
+					item.innerHTML = `
+						<div class="cart-item-name">${products[key].name}</div>
+						<div class="cart-item-price">¥${products[key].price.toFixed(2)}</div>
+						<div class="cart-item-qty">
+							<button class="cart-btn minus" data-id="${key}">-</button>
+							<input type="number" class="cart-qty-input" data-id="${key}" value="${cart[key]}" min="0">
+							<button class="cart-btn plus" data-id="${key}">+</button>
+						</div>
+					`;
+
+					cartItems.appendChild(item);
+				}
+			});
+
+			// 添加事件监听器到购物车输入框
+			document.querySelectorAll('.cart-qty-input').forEach(input => {
+				input.addEventListener('change', function() {
+					const id = this.dataset.id;
+					const value = parseInt(this.value) || 0;
+					cart[id] = value < 0 ? 0 : value;
+					updateCart();
+					renderProducts(); // 更新主列表
+				});
+			});
+
+			// 添加事件监听器到增减按钮
+			document.querySelectorAll('.cart-btn.minus').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const id = this.dataset.id;
+					if (cart[id] > 0) {
+						cart[id]--;
+						updateCart();
+						renderProducts(); // 更新主列表
+					}
+				});
+			});
+
+			document.querySelectorAll('.cart-btn.plus').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const id = this.dataset.id;
+					cart[id]++;
+					updateCart();
+					renderProducts(); // 更新主列表
+				});
+			});
+		}
+        
+        // 重置整个购物车
+        function resetShoppingCart() {
+            // 清除所有本地存储数据
+            localStorage.removeItem('shoppingCart_budget');
+            localStorage.removeItem('shoppingCart_cart');
+            localStorage.removeItem('shoppingCart_history');
+            
+            // 重置状态变量
+            budget = 0;
+            cart = {};
+            history = [];
+            
+            // 初始化购物车
+            products.forEach((product, index) => {
+                cart[index] = 0;
+            });
+            
+            // 更新UI
+            budgetInput.value = '';
+            balanceElement.textContent = '¥0.0';
+            balanceBall.classList.remove('negative');
+            historySection.style.display = 'none';
+            cartContainer.style.display = 'none';
+            
+            // 重新渲染组件
+            renderProducts();
+            renderCartItems();
+            
+            // 显示通知
+            showNotification('购物车已重置，所有数据已清除!');
+        }
+        
+        // 显示通知
+        function showNotification(message) {
+            notification.textContent = message;
+            notification.classList.add('show');
+            
+            setTimeout(() => {
+                notification.classList.remove('show');
+            }, 2000);
+        }
+        
+        // 复制购物清单
+        function copyCartToClipboard() {
+            // 合并相同商品的数量
+            const mergedCart = {};
+            
+            Object.keys(cart).forEach(key => {
+                const productName = products[key].name;
+                if (cart[key] > 0) {
+                    if (mergedCart[productName]) {
+                        mergedCart[productName] += cart[key];
+                    } else {
+                        mergedCart[productName] = cart[key];
+                    }
+                }
+            });
+            
+            // 创建文本内容
+            let text = '购物清单:\n';
+            for (const [name, quantity] of Object.entries(mergedCart)) {
+                text += `${name} × ${quantity}\n`;
+            }
+            
+            const total = calculateTotal();
+            text += `\n总计: ¥${total.toFixed(2)}`;
+            
+            // 复制到剪贴板
+            navigator.clipboard.writeText(text)
+                .then(() => {
+                    showNotification('购物清单已复制到剪贴板!');
+                    
+                    // 保存历史记录但不重置当前购物车
+                    saveHistory(mergedCart, total);
+                })
+                .catch(err => {
+                    showNotification('复制失败，请重试');
+                    console.error('复制失败', err);
+                });
+        }
+        
+        // 保存历史记录
+        function saveHistory(mergedCart, total) {
+            const timestamp = new Date().toLocaleString();
+            const historyEntry = {
+                date: timestamp,
+                items: mergedCart,
+                total: total
+            };
+            
+            // 将新记录添加到历史数组开头
+            history.unshift(historyEntry);
+            
+            // 只保留最近3条记录
+            if (history.length > 3) {
+                history.pop();
+            }
+            
+            localStorage.setItem('shoppingCart_history', JSON.stringify(history));
+            
+            // 显示历史记录
+            displayHistory();
+            historySection.style.display = 'block';
+        }
+        
+        // 显示历史记录
+        function displayHistory() {
+            historyContainer.innerHTML = '';
+            
+            history.forEach(entry => {
+                const historyItem = document.createElement('div');
+                historyItem.className = 'history-item';
+                
+                let itemsHtml = `<div><strong>${entry.date}</strong></div>`;
+                for (const [name, quantity] of Object.entries(entry.items)) {
+                    itemsHtml += `<div>${name} × ${quantity}</div>`;
+                }
+                itemsHtml += `<div style="margin-top:8px;font-weight:bold;color:#e74c3c;">总计: ¥${entry.total.toFixed(2)}</div>`;
+                
+                historyItem.innerHTML = itemsHtml;
+                historyContainer.appendChild(historyItem);
+            });
+        }
+        
+        // 事件监听器
+        setBudgetBtn.addEventListener('click', () => {
+            const value = parseFloat(budgetInput.value);
+            if (!isNaN(value) && value >= 0) {
+                budget = value;
+                localStorage.setItem('shoppingCart_budget', budget);
+                updateBalance();
+                showNotification('预算设置成功!');
+            } else {
+                showNotification('请输入有效的预算金额');
+            }
+        });
+        
+        // 重置按钮事件监听器
+        resetBtn.addEventListener('click', resetShoppingCart);
+        
+        copyBall.addEventListener('click', copyCartToClipboard);
+        
+        balanceBall.addEventListener('click', () => {
+            cartContainer.style.display = 'block';
+            renderCartItems();
+        });
+        
+        closeCartBtn.addEventListener('click', () => {
+            cartContainer.style.display = 'none';
+        });
+        
+        // 初始化页面
+        initPage();
+    </script>
+</body>
+</html>
